@@ -33,7 +33,7 @@ export const getTours = async (req, res) => {
       TourModal.find()
         .limit(limit)
         .skip(startIndex)
-        .populate("creator", "image name")
+        .populate("creator", "name")
         .lean(),
       TourModal.countDocuments({}),
     ]);
