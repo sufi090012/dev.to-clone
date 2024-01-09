@@ -93,7 +93,7 @@ export const deleteTour = async (req, res) => {
     await TourModal.findByIdAndRemove(id);
 
     // Update the corresponding cache entries for all tour cards
-    const prefix = "tours_";
+    // const prefix = "tours_";
     const keys = cache.keys();
     keys.forEach((key) => {
       if (key.startsWith(prefix)) {

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import sharp from "sharp";
 
 import UserModal from "../models/user.js";
 
@@ -45,7 +46,7 @@ export const signin = async (req, res) => {
 };
 
 export const signup = async (req, res) => {
-  const { email, password, firstName, lastName, image } = req.body;
+  const { email, password, firstName, lastName } = req.body;
 
   try {
     // const existingUser = await UserModal.findOne({}); // Check if any user already exists
@@ -58,7 +59,8 @@ export const signup = async (req, res) => {
 
     const result = await UserModal.create({
       email,
-      image,
+      // image: await compressAndStoreImage(image), // Function to handle image compression and storage
+
       password: hashedPassword,
       name: `${firstName} ${lastName}`,
     });
@@ -72,7 +74,14 @@ export const signup = async (req, res) => {
     console.log(error);
   }
 };
+// const compressAndStoreImage = async (base64Image) => {
+//   // Adjust the options according to your needs
+//   const compressedImageBuffer = await sharp(Buffer.from(base64Image, "base64"))
+//     .resize({ width: 300, height: 300 })
+//     .toBuffer();
 
+//   return compressedImageBuffer.toString("base64");
+// };
 export const changeEmail = async (req, res) => {
   const { oldEmail, newEmail } = req.body;
 
@@ -130,7 +139,7 @@ export const changePassword = async (req, res) => {
   }
 };
 export const updateRegistrationInfo = async (req, res) => {
-  const { firstName, lastName, image } = req.body;
+  const { firstName, lastName } = req.body;
   try {
     const userId = req.userId;
     const user = await UserModal.findById(userId);
@@ -141,7 +150,7 @@ export const updateRegistrationInfo = async (req, res) => {
 
     // Update the user's registration information
     user.name = `${firstName} ${lastName}`;
-    user.image = `${image}`;
+    // user.image = `${image}`;
     await user.save();
 
     res
