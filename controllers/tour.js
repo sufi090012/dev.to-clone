@@ -6,7 +6,7 @@ export const createTour = async (req, res) => {
   const tour = req.body;
   const newTour = new TourModal({
     ...tour,
-    creator: req.userId, // Assuming req.userId is the user's ID
+    creator: req.userId,
     createdAt: new Date().toISOString(),
   });
 
@@ -14,14 +14,7 @@ export const createTour = async (req, res) => {
     await newTour.save();
     await newTour.populate("creator", "name").execPopulate();
 
-    // Update the cache with the newly created tour
-    const prefix = "tours_";
-    const keys = cache.keys();
-    keys.forEach((key) => {
-      if (key.startsWith(prefix)) {
-        cache.del(key);
-      }
-    });
+    // Get the current page number from the request query
 
     res.status(201).json(newTour);
   } catch (error) {
@@ -35,37 +28,15 @@ export const getTours = async (req, res) => {
     const limit = 99;
     const startIndex = (Number(page) - 1) * limit;
 
-    // Check if data is present in cache for the specific page
-    const cachedData = cache.get(`tours_page_${page}`);
-    if (cachedData) {
-      return res.json(cachedData);
-    }
-
     // Query the database to fetch the Tours for the specific page and get the total count simultaneously
     const [tours, total] = await Promise.all([
       TourModal.find()
         .limit(limit)
         .skip(startIndex)
-        .populate("creator", "image name") // Pass both fields in a single populate call
-
+        .populate("creator", "image name")
         .lean(),
       TourModal.countDocuments({}),
     ]);
-
-    // Preload the data for the next page and store it in cache
-    const nextPage = Number(page) + 1;
-    const nextStartIndex = startIndex + limit;
-    const nextTours = await TourModal.find()
-      .limit(limit)
-      .skip(nextStartIndex)
-      .lean();
-    const cachedNextPage = {
-      data: nextTours,
-      currentPage: nextPage,
-      totalTours: total,
-      numberOfPages: Math.ceil(total / limit),
-    };
-    cache.put(`tours_page_${nextPage}`, cachedNextPage);
 
     // Update cache with the fetched data for the specific page
     const cachedTours = {
@@ -74,7 +45,7 @@ export const getTours = async (req, res) => {
       totalTours: total,
       numberOfPages: Math.ceil(total / limit),
     };
-    cache.put(`tours_page_${page}`, cachedTours);
+    // cache.put(`tours_page_${page}`, cachedTours);
 
     res.json(cachedTours);
   } catch (error) {
@@ -97,16 +68,17 @@ export const getToursByUser = async (req, res) => {
     return res.status(404).json({ message: "User doesn't exist" });
   }
 
-  const cacheKey = `tours_user_${id}`;
-  const cachedData = cache.get(cacheKey);
-  if (cachedData) {
-    return res.json(cachedData);
-  }
+  // const cacheKey = `tours_user_${id}`; // Update this line in getToursByUser
+
+  // const cachedData = cache.get(cacheKey);
+  // if (cachedData) {
+  //   return res.json(cachedData);
+  // }
 
   const userTours = await TourModal.find({ creator: id });
 
   // Update cache with the fetched data for the specific user
-  cache.put(cacheKey, userTours);
+  // cache.put(cacheKey);
 
   res.status(200).json(userTours);
 };
@@ -183,7 +155,7 @@ export const updateTour = async (req, res) => {
     };
     await TourModal.findByIdAndUpdate(id, updatedTour, { new: true });
     // Update the corresponding cache entries for all tour cards
-    const prefix = "tours_";
+    // const prefix = "tours_";
     const keys = cache.keys();
     keys.forEach((key) => {
       if (key.startsWith(prefix)) {
